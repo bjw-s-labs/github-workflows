@@ -1,0 +1,36 @@
+---
+name: Retry failed workflow
+
+on:
+  workflow_call:
+    inputs:
+      github_repository:
+        description: "GitHub repository"
+        required: true
+        type: string
+      run_id:
+        description: "ID of the workflow run to retry"
+        required: true
+        type: string
+      delay:
+        description: "Delay (in minutes) before retrying the workflow run"
+        required: false
+        type: string
+        default: "0m"
+
+jobs:
+  retry:
+    name: Retry workflow run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for delay
+        if: ${{ inputs.delay != '0m' }}
+        run: sleep ${{ inputs.delay }}
+
+      - name: Rerun ${{ inputs.run_id }}
+        env:
+            GH_REPO: ${{ inputs.github_repository }}
+            GH_TOKEN: ${{ github.token }}
+        run: |
+            gh run watch ${{ inputs.run_id }} > /dev/null 2>&1
+            gh run rerun ${{ inputs.run_id }} --failed
