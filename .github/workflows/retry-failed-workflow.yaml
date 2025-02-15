@@ -4,11 +4,6 @@ name: Retry failed workflow
 on:
   workflow_dispatch:
     inputs:
-      token:
-        description: "GitHub token"
-        required: false
-        type: string
-        default: ${{ github.token }}
       github_repository:
         description: "GitHub repository"
         required: true
@@ -28,13 +23,21 @@ jobs:
     name: Retry workflow run
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.LAB_ASSISTANT_APP_ID }}
+          private-key: ${{ secrets.LAB_ASSISTANT_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+
       - name: Wait for delay
         if: ${{ inputs.delay != '0m' }}
         run: sleep ${{ inputs.delay }}
 
       - name: Rerun ${{ inputs.github_repository }} @ ${{ inputs.run_id }}
         env:
-            GH_TOKEN: ${{ inputs.token }}
+            GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
             gh run --repo ${{ inputs.github_repository }} watch ${{ inputs.run_id }} > /dev/null 2>&1
             gh run --repo ${{ inputs.github_repository }} rerun ${{ inputs.run_id }} --failed
