@@ -22,6 +22,8 @@ jobs:
   retry:
     name: Retry workflow run
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: Wait for delay
         if: ${{ inputs.delay != '0m' }}
